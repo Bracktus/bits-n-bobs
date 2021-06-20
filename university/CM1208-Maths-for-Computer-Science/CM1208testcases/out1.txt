@@ -1,0 +1,11 @@
+Words in dictionary:  16
+Query:  rainbow
+Relevant documents: 1 3 
+3 46.50848
+1 62.68827
+Query:  double rainbow
+Relevant documents: 3 
+3 35.79576
+Query:  double size
+Relevant documents: 2 
+2 52.23876

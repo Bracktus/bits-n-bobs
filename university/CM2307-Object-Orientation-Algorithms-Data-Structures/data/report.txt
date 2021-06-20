@@ -1,0 +1,21 @@
+The time complexity of my sorting algorithm in O(nlogn).
+
+This is because it's a divide and conqour algorithm, it first splits the array in half, and then half again ... and so on. 
+The number of divisions is log2(n) where n is the length of our array.
+
+The merging takes O(n1 + n2) time as it iterates through n1 and n2 once. (n1 and n2 are the 2 sub arrays to be merged).
+We merge the subarrays of the list once.
+
+Merging takes O(n) time, and the splitting takes O(log2(n)) time so the time complexity of the sort is O(n*log2(n)). Which is O(nlog(n)).
+
+=========================================================================================================================================================
+
+The time complexity of my addition method is O(n1 + n2) where n1 and n2 are the number of non-zero numbers in the matricies.
+
+This iterates through n1 and n2 until the end of n1 or n2 is reached. It then iterates through the remaining values in the array other array that didn't reach the end.
+
+e.g  n1 = [1 6 9 10 20] n2 = [2 5 7 8] 
+     1 2 5 6 8 (n2 ended) 
+     9 10 20 (iterating through the rest of n1)
+
+It iterates through all the elements of n1 and n2 once. Therefore it's O(n1 + n2)
