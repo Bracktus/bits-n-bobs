@@ -1,22 +1,23 @@
 #lang racket
 
+(define (average a b) (/ (+ a b) 2))
+
+(define (close-enough? x y tolerance)
+        (< (abs (- x y)) tolerance))
+
 (define (search f neg-point pos-point)
     (let ((midpoint (average neg-point pos-point)))
           (if (close-enough? neg-point pos-point)
               midpoint
               (let ((test-value (f midpoint)))
-                   (cond ((positive? test-value)
-                         (search f neg-point midpoint))
+                   
+                    (cond [(positive? test-value) 
+                           (search f neg-point midpoint)]
 
-                         ((negative? test-value)
-                         (search f midpoint pos-point))
+                          [(negative? test-value) 
+                           (search f midpoint pos-point)]
 
-                         (else midpoint)
-                   )
-              )
-          )
-     )
-)
+                          (else midpoint))))))
 
 (define (half-interval-method f a b)
   (let ((a-value (f a))
@@ -33,6 +34,7 @@
   )
 )
 
+
 (define (negative? n)
     (cond ((> n 0) false)
           ((< n 0) true)
@@ -42,11 +44,6 @@
 (define (positive? n)
     (not (negative? n))
 )
-
-(define (average a b) (/ (+ a b) 2))
-
-(define (close-enough? x y tolerance)
-        (< (abs (- x y)) tolerance))
 
 (define tolerance 0.00001)
 
@@ -96,13 +93,12 @@
 
 (newtons-method (cubic 1.0 2.0 3.0) 1)
 
-(half-interval-method (lambda (x) (- (* x x) 3)) 1 3)
 (newline)
 (fixed-point (lambda (x) (+ 1 (/ 1 x))) 1.0)
 (newline)
 (fixed-point (lambda (x) (/ (log 1000) (log x))) 3.0)
 (newline)
-(fixed-point (lambda (x) (/ (+ x (/ (log 1000) (log x))) 2)) 3.0) 
+(fixed-point (lambda (x) (/ (+ x (/ (log 1000) (log x))) 2)) 3.0)
 (newline)
 
 

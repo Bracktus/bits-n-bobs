@@ -167,17 +167,14 @@
 (define (enumerate-interval low high)
   (if (> low high)
       '()
-      (cons low (enumerate-interval (+ low 1) high)))
-)
+      (cons low (enumerate-interval (+ low 1) high))))
 
 (define (enumerate-tree tree)
   (cond ((null? tree) nil)
         ((not (pair? tree)) (list tree))
         (else (append
                 (enumerate-tree (car tree))
-                (enumerate-tree (car tree))))
-  )
-)
+                (enumerate-tree (car tree))))))
   
 
 (define (fib n)
@@ -298,22 +295,95 @@
               (cdr rest))))
   (iter initial sequence))
 
+;(fold-left / 1 (list 1 2 3)) 
+;(iter 1 [1 2 3])
+
+;(iter (/ 1 1) [2 3])
+;(iter 1 [2 3])
+
+;(iter (/ 1 2) [3])
+;(iter 0.5 [3])
+
+;(iter (/ 0.5 3) [])
+;(iter 0.1667 [])
+;(eq? 0.1667 (/ 1 6)) 
 
 (define (fold-right op initial sequence)
   (if (null? sequence)
       initial
-      (op (car sequence)
-          (fold-right op initial (cdr sequence)))))
+      (op (car sequence) (fold-right op initial (cdr sequence)))))
 
-(fold-right / 1 (list 1 2 3))
+;(fold-right / 1 (list 1 2 3))
+;(fold-right / 1 [1 2 3])
+;(/ 1 (fr / 1 [2 3]))
+;(/ 1 (/ 2 (fr / 1 [3])))
+;(/ 1 (/ 2 (/ 3 (fr / 1 []))))
+;(/ 1 (/ 2 (/ 3 1))
+;(/ 1 (/ 2 3))
+;(/ 1 0.666)
+;(1.5)
+
 (fold-left / 1 (list 1 2 3))
-(fold-right list nil (list 1 2 3))
+(fold-right / 1 (list 1 2 3))
+
 (fold-left list nil (list 1 2 3))
+;(() 1)
+;((() 1) 2)
+;(((() 1) 2) 3)
 
-(define (reverse sequence)
-  (fold-right 
-    (lambda (x y) (cons y x)) nil sequence))
+(fold-right list nil (list 1 2 3))
+;(3 ())
+;(2 (3 ()))
+;(1 (2 (3 ())))
 
-(define (reverse sequence)
+(define (reverse-left sequence)
   (fold-left 
-    (lambda (x y) <??>) nil sequence))
+    (lambda (x y) (cons y x)) 
+    nil 
+    sequence))
+
+(reverse-left '(1 2 3))
+
+(define (reverse-right sequence)
+  (fold-right 
+    (lambda (x y) (append y (list x)))
+    nil
+    sequence))
+
+(reverse-right '(1 2 3))
+
+;maps a proc onto a seq and adds each val to a list in order
+(define (flatmap proc seq)
+  (accumulate append nil (map proc seq)))
+
+;(cadr a) is (car (cdr a))
+(define (prime-sum? pair)
+  (prime? (+ (car pair) (cadr pair))))
+
+(define (make-pair-sum pair)
+  (list (car pair)
+        (cadr pair)
+        (+ (car pair) (cadr pair))))
+
+(define (prime? n)
+  (define (loop d)
+    (cond ((> d (sqrt n)) #t)
+          ((= 0 (remainder n d)) #f)
+          (else (loop (+ d 1)))))
+  (loop 2))
+
+(prime? 93)
+
+(define (prime-sum-pairs n)
+  (map make-pair-sum
+       (filter prime-sum?
+               (flatmap
+                 (lambda (i)
+                   (map (lambda (j)
+                          (list i j))
+                        (enumerate-interval
+                          1
+                          (- i 1))))
+                 (enumerate-interval 1 n)))))
+
+(prime-sum-pairs 6)
