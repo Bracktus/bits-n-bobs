@@ -1,0 +1,13 @@
+Metadata-Version: 2.1
+Name: pynvim
+Version: 0.4.3
+Summary: Python client to neovim
+Home-page: http://github.com/neovim/pynvim
+Author: Thiago de Arruda
+Author-email: tpadilha84@gmail.com
+License: Apache
+Download-URL: https://github.com/neovim/pynvim/archive/0.4.3.tar.gz
+Description: UNKNOWN
+Platform: UNKNOWN
+Provides-Extra: pyuv
+Provides-Extra: test
