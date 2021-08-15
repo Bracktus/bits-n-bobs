@@ -19,6 +19,8 @@ def applyDither(dither_matrix, pixel):
     return applied_matrix
 
 def transformImage(trans_mat, image, x, y):
+    """Takes in an empty image and fills in the pixels
+       defined my trans_mat at the point (x, y)"""
     dither_len = len(trans_mat)
 
     for i in range(dither_len):

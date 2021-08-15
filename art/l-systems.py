@@ -18,8 +18,6 @@ class LSystem:
 
         screen = turtle.getscreen()
         screen.screensize(2000, 2000)
-        turtle.tracer(0, 0)
-        turtle.hideturtle()
         turtle.speed(0)
         turtle.left(90)
 
@@ -46,7 +44,6 @@ class LSystem:
             elif char == "+":
                 turtle.left(self.theta)
 
-        turtle.update()
         turtle.done()
        
     def get_string(self):
@@ -64,9 +61,10 @@ class LSystem:
 
         return fin
 
-system = LSystem("X", 22.5, 5)
-system.add_rule("X", "F-[[X]+X]+F[+FX]-X", 1)
-system.add_rule("F", "FF", 1)
+#Draw a hilbert curve
+system = LSystem("A", 90, 4)
+system.add_rule("A", "-BF+AFA+FB-", 1)
+system.add_rule("B", "+AF-BFB-FA+", 1)
 system.draw()
 
 
