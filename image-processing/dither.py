@@ -42,8 +42,6 @@ new_size = (width * dither_len, height * dither_len)
 new_image = Image.new('1', new_size)
 new_pixels = new_image.load()
 
-#TODO fix this bug:
-#   the dithering is overlapping. we need to offset it by 4 each loop
 
 new_x = 0
 new_y = 0
