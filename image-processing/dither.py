@@ -13,7 +13,7 @@ def applyDither(dither_matrix, pixel):
     norm_pixel = math.floor(pixel / max_val + 1)
 
     for arr in dither_matrix:
-        thres_arr = [int(value < norm_pixel) for value in arr]
+        thres_arr = [int(value > norm_pixel) for value in arr]
         applied_matrix.append(thres_arr)
     
     return applied_matrix
@@ -36,7 +36,7 @@ dither_matrix = [[0, 8, 2, 10 ],
 
 dither_len = len(dither_matrix)
 
-image = Image.open("./images/statue.png")
+image = Image.open("./images/david.png")
 width, height = image.size
 old_pixels = image.load()
 
@@ -49,9 +49,10 @@ new_x = 0
 new_y = 0
 for x in range(width):
     for y in range(height):
-        old_pixel, a = old_pixels[x, y]
+        # old_pixel, a = old_pixels[x, y]
+        old_pixel = old_pixels[x, y]
         trans_mat = applyDither(dither_matrix, old_pixel)
         transformImage(trans_mat, new_pixels, x * 4, y * 4)
 
-new_image.save("./images/dither.png")
+new_image.save("./images/dither1.png")
 
