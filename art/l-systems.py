@@ -62,9 +62,11 @@ class LSystem:
         return fin
 
 #Draw a hilbert curve
-system = LSystem("A", 90, 4)
-system.add_rule("A", "-BF+AFA+FB-", 1)
-system.add_rule("B", "+AF-BFB-FA+", 1)
+# system = LSystem("A", 90, 4)
+# system.add_rule("A", "-BF+AFA+FB-", 1)
+# system.add_rule("B", "+AF-BFB-FA+", 1)
+# system.draw()
+
+system = LSystem("F", 25.7, 5)
+system.add_rule("F", "F[+F]F[-F]F", 1)
 system.draw()
-
-
