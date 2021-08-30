@@ -4,6 +4,8 @@
 (define factor 0)
 
 (define (setup)
+  (cursor 'blank)
+  (set-frame-rate! 60)
   (size 800 800))
 
 (define (draw)
