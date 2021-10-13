@@ -1,14 +1,82 @@
-#lang racket
+#lang sketching
 
 (provide poly+)
 (provide poly*)
 (provide interpolate)
+(provide poly->func)
 
-(define points (list (cons 1 1) (cons 2 4) (cons 7 9)))
+;-------------PHYSICS------------
+
+(define point-list
+  (list (cons 350 230)
+        (cons 300 100)
+        (cons 100 23)
+        (cons 50 23)
+        (cons 200 43)))
+
+(define accel-list
+  (list 10 20 30 40 50))
+
+(define (bound points accels)
+  
+  (define (bound-one point accel)
+    (cond [(> (cdr point) height)
+           (* -1 accel)]
+        
+          [(< (cdr point) 0)
+           (* -1 accel)]
+        
+          [else accel]))
+
+  (map bound-one points accels))
+  
+(define (move-points points accels)
+  (map
+   (λ (point accel) (cons (car point) (+ accel (cdr point))))
+   points accels))
+
+;-------------DRAWING------------
+
+(define (setup)
+  (size 400 400)
+  (set-frame-rate! 60))
+
+(define (draw)
+  ;(translate (/ width 2) (/ height 2))
+  (background 0)
+  (set! point-list (move-points point-list accel-list))
+  (set! accel-list (bound point-list accel-list))
+  (let* ([points point-list]
+         [poly (interpolate points)]
+         [f (poly->func poly)])
+    
+    (fill 10)
+    (for ([point points])
+      (circle (car point) (cdr point) 10))
+    
+    (stroke 255)
+    (for ([x (in-range 0 800 5)])
+      (circle x (f x) 3))))
+
+;------------POLYNOMIAL CALCULATIONS-----------------
+
 ; a polynomial is a list of coefficients. '(2 0 3) -> 2 + 0x + 3x^2
-
 ;converts a polynomial into a function
-;(define (poly->func poly))
+(define (poly->func poly)
+  
+  (define (poly-func poly val)    
+    (let loop ([lst poly]
+               [power 0]
+               [acc 0])
+      
+      (if (null? lst)
+          acc
+          (loop (cdr lst)
+                (add1 power)
+                (+ acc (* (car lst)
+                          (expt val power)))))))
+
+  (λ (value) (poly-func poly value)))
 
 ;adds 2 polynomials
 (define (poly+ poly-1 poly-2)
@@ -37,10 +105,13 @@
     (for* ([i (in-range poly-len-1)]
            [j (in-range poly-len-2)])
       
-      (define curr-val (vector-ref final (+ i j)))
+      (define curr-val
+        (vector-ref final (+ i j)))
       
-        (vector-set! final (+ i j) (+ curr-val (* (vector-ref vec-1 i)
-                                                  (vector-ref vec-2 j)))))
+      (vector-set! final
+                   (+ i j)
+                   (+ curr-val (* (vector-ref vec-1 i)
+                                  (vector-ref vec-2 j)))))
     
     (vector->list final)))
 
@@ -50,17 +121,16 @@
   (define poly-list
     (map (λ (point) (get-term point points)) points))
 
-  
-  (displayln poly-list)
   (foldl poly+ '(0) poly-list))
 
+;returns a term of the lagrange polynomial.
+;add them all and you get the whole thing
 (define (get-term point points)
 
   (define (get-subterms x1 x2)
     ;y * (x - xi / xi - xj)
     (let ([a0 (/ (- x2) (- x1 x2))]
           [a1 (/ 1 (- x1 x2))])
-      ;(displayln (list a0 a1))
       (list a0 a1)))
     
   (let* ([n-points (remove point points)];ignore where xi = xj
@@ -68,5 +138,4 @@
          [y (cdr point)]
          [subterms (map (λ (p) (get-subterms x (car p))) n-points)])
     (poly* (list y) (foldl poly* '(1) subterms))))
-
 
