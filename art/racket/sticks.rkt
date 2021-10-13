@@ -50,12 +50,12 @@
   (set-frame-rate! 30)
   (size 800 1000)
   
-  (add-dot 1   100 100 95 95)
+  (add-dot -1 100 100 95 95)
   (map (λ (n) (add-dot n (+ (* n 30) 80) 100 (+ (* n 30) 80) 100))
-       '(-2 3 4 5 6 7))
+       '(2 3 4 5 6 7))
     
-  (add-stick  1 -2)
-  (map (λ (n) (add-stick n (add1 n))) '(-2 3 4 5 6)))
+  (add-stick  -1 2)
+  (map (λ (n) (add-stick n (add1 n))) '(2 3 4 5 6)))
 
 ;We can wrap render-sticks and constrain-dots in a for loop to reduce the bounciness
 ;I like the effect so I'll leave it out
