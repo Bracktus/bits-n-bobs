@@ -11,8 +11,6 @@ class Spring {
     this.unit = unit;
     this.velocity = new PVector(0, 0);
     this.restLength = 0;
-    print(origin + "\n");
-    //print(unit + "\n");
   }
 
   void update(PVector extraForce, float tension) {

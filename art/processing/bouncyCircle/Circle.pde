@@ -21,9 +21,11 @@ class Circle {
       
       for (int i = 0; i < numSprings; i++){
         angle = ((float) i / numSprings) * TWO_PI;
-        springOrigin = new PVector(radius * cos(angle), radius * sin(angle));
-        print(i / numSprings + "\n");
-        unit = PVector.sub(springOrigin, origin);
+        
+        springOrigin = new PVector(radius * cos(angle), radius * sin(angle)).add(origin);
+        
+        unit = PVector.sub(origin, springOrigin);
+        
         springs[i] = new Spring(springOrigin, unit.normalize());
       }
       return springs;
@@ -70,6 +72,7 @@ class Circle {
     }
 
     void display() {
+      //PVector pos;
       noFill();
       //beginShape();
       for (int i = 0; i < springs.length; i++) {
