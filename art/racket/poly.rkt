@@ -8,14 +8,13 @@
 ;-------------PHYSICS------------
 
 (define point-list
-  (list (cons 350 230)
-        (cons 300 100)
-        (cons 100 23)
-        (cons 50 23)
-        (cons 200 43)))
+  (list (cons 100 0)
+        (cons 200 200)
+        (cons 300 300)
+        (cons 400 103)))
 
 (define accel-list
-  (list 10 20 30 40 50))
+  (list 8 3 5 4))
 
 (define (bound points accels)
   
@@ -38,8 +37,9 @@
 ;-------------DRAWING------------
 
 (define (setup)
-  (size 400 400)
-  (set-frame-rate! 60))
+  (smoothing 'smoothed)
+  (size 500 500)
+  (set-frame-rate! 30))
 
 (define (draw)
   ;(translate (/ width 2) (/ height 2))
@@ -50,13 +50,17 @@
          [poly (interpolate points)]
          [f (poly->func poly)])
     
-    (fill 10)
-    (for ([point points])
-      (circle (car point) (cdr point) 10))
-    
+
+    (no-fill)
     (stroke 255)
-    (for ([x (in-range 0 800 5)])
-      (circle x (f x) 3))))
+    (begin-shape)
+    (for ([x (in-range 0 500 10)])
+      (vertex x (f x)))
+    (end-shape)
+
+    (fill 255)
+    (for ([point points])
+      (circle (car point) (cdr point) 10))))
 
 ;------------POLYNOMIAL CALCULATIONS-----------------
 
