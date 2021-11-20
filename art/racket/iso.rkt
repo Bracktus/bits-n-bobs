@@ -6,42 +6,37 @@
 (define yellow
   (color 255 204 0))
 
+(define blue
+  (color 0 60 255))
+
+(define red
+  (color 255 9 0))
+
 ;---------------maths----------------
 ;https://en.wikipedia.org/wiki/Isometric_projection#Mathematics
 
-(define (rot-around origin point θ)
-
-  (define x
-    (vector-ref origin 0))
-
-  (define y
-    (vector-ref origin 1))
-    
-  ;todo think of some better names 
-  (define idx-02
-    (+ (* (- x) (cos θ))
-       (* y (sin θ))
-       x))
-
-  (define idx-12
-    (- (* (- x) (sin θ))
-       (* y (cos θ))
-       y))
-
- ;what this does is it moves the coordinate system to origin
- ;rotates the point
- ;moves back to original position
-
+(define (3d-rotate axis θ point)
  (define rot-mat
-   ;rotation matrix around a point
-   (matrix [[(cos θ)  (- (sin θ)) idx-02]
-            [(sin θ)  (cos θ)     idx-12]
-            [0        0           1]]))
+   ;https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
+   (case axis
+     [(x)
+      (matrix [[1 0 0]
+               [0 (cos θ) (- (sin θ))]
+               [0 (sin θ) (cos θ)]])]
+
+     [(y)
+      (matrix [[(cos θ) 0 (sin θ)]
+               [0 1 0]
+               [(- (sin θ)) 0 (cos θ)]])]
+     [(z)
+      (matrix [[(cos θ)  (- (sin θ)) 0]
+               [(sin θ)  (cos θ) 0]
+               [0 0 1]])]))
 
  (define fin-mat
     ;apply our rotation matrix to our point
     (matrix* rot-mat (vector->matrix 3 1 point)))
-
+  
  (matrix->vector fin-mat))
  
 (define (ortho point)
@@ -78,7 +73,6 @@
   ;draw a edge of a cuboid
   (let-values ([(iso-x1 iso-y1) (ortho p1)]
                [(iso-x2 iso-y2) (ortho p2)])
-    (stroke yellow)
     (line iso-x1 iso-y1 iso-x2 iso-y2))) 
       
 (define (iso-face p1 p2 p3 p4)
@@ -125,28 +119,92 @@
 
          [(equal? style 'opaque)
           ;the cuboid is made of faces
+          (iso-face a b c d)
+          (iso-face b c g h)
+          
+          (iso-face a e f d)
+          (iso-face c d f g)
+          (iso-face e h g f)])))
+
+(define (cuboid-ang x y z wid hig dep axis θ style)
+  ;https://excalidraw.com/#json=Ah-neZtQgizt8Dq-ruEFR,aYpTJ47Sv3YkWp3E_ZWLVA
+  ;above is a diagram labelling all verticies
+  (let ([a (iso (3d-rotate axis θ (vector (- x wid) (+ y hig) (+ z dep))))]
+        [b (iso (3d-rotate axis θ (vector (- x wid) (+ y hig) (- z dep))))]
+        [c (iso (3d-rotate axis θ (vector (+ x wid) (+ y hig) (- z dep))))]
+        [d (iso (3d-rotate axis θ (vector (+ x wid) (+ y hig) (+ z dep))))]
+        [e (iso (3d-rotate axis θ (vector (- x wid) (- y hig) (+ z dep))))]
+        [f (iso (3d-rotate axis θ (vector (+ x wid) (- y hig) (+ z dep))))]
+        [g (iso (3d-rotate axis θ (vector (+ x wid) (- y hig) (- z dep))))]
+        [h (iso (3d-rotate axis θ (vector (- x wid) (- y hig) (- z dep))))])
+
+   (cond [(equal? style 'wireframe)
+          ;the cuboid is made of edges
+          (iso-line a b)
+          (iso-line a d)
+          (iso-line a e)
+          (iso-line c d)
+          (iso-line c g)
+          (iso-line d f)
+          (iso-line e f)
+          (iso-line f g)
+          (iso-line e h)
+          (iso-line g h)
+          (iso-line b h)
+          (iso-line b c)]
+
+         [(equal? style 'opaque)
+          ;the cuboid is made of faces
+          ;this is buggy, we need a way of only display faces that are visible to the camera
+          (iso-face a b c d)
+          (iso-face b c g h)
+          
           (iso-face a e f d)
           (iso-face c d f g)
           (iso-face e h g f)])))
 
 ;--------------drawing------------------
 
-(define (setup)
-  (fullscreen))
+(define pos #(0 0 0))
 
-(define z 0)
+(define a
+  0)
+(define (setup)
+  (set-frame-rate! 30)
+  (size 1400 1000))
+
+
 (define (draw)
   (background 0)
   
   (translate (/ width  2)
              (/ height 2))
+
+  (stroke red)
+  (cuboid-ang 100 301 100 100 100 100 'x a 'wireframe)
+  (stroke yellow)
+  (cuboid-ang 100 100 301 100 100 100 'x a 'wireframe)
+  (stroke blue)
+  (cuboid-ang 301 100 100 100 100 100 'x a 'wireframe)
   
-  (fill yellow)
-  (cuboid (* 10 (sin z)) 0 0 30 30 30 'opaque)
-  (fill (color 255 175 26))
-  (cuboid 0 0 100 30 30 30 'opaque)
-  (cuboid 100 0 0 30 30 30 'opaque)
-  (set! z (add1 z)))
+  (stroke red)
+  (cuboid-ang 100 301 100 100 100 100 'y a 'wireframe)
+  (stroke yellow)
+  (cuboid-ang 100 100 301 100 100 100 'y a 'wireframe)
+  (stroke blue)
+  (cuboid-ang 301 100 100 100 100 100 'y a 'wireframe)
+
+  (stroke red)
+  (cuboid-ang 100 301 100 100 100 100 'z a 'wireframe)
+  (stroke yellow)
+  (cuboid-ang 100 100 301 100 100 100 'z a 'wireframe)
+  (stroke blue)
+  (cuboid-ang 301 100 100 100 100 100 'z a 'wireframe)
+  ;(cuboid 0 0 0 100 100 100 'wireframe)
+  (set! a (+ a 0.005))
+  )
+            
+ 
   
 ;-------------main----------------------
 
