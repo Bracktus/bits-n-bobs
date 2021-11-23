@@ -2,6 +2,7 @@
 
 (require math/matrix)
 (require racket/list)
+(require racket/match)
 
 ;---------------colours--------------
 (define yellow
@@ -34,6 +35,7 @@
 
 (define (basic-rot axis θ)
     ;returns a 3d rotation matrix on 1 axis
+  
     (case axis
      ;https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
      [(x)
@@ -128,16 +130,16 @@
           ;this is buggy, we need a way of only display faces that are visible to the camera
           (iso-face a b c d)
           (iso-face b c g h)
-
+          
           (iso-face a e f d)
           (iso-face c d f g)
           (iso-face e h g f)])))
 
 ;-------------turtle-----------
-;the turtle can place a box next to another box (6 possible directions)
-;it can change the rotation of the upcoming boxes
-;it can change colour of boxes
-;it can save and return to a previous state
+;the turtle can place a box next to another box (6 possible directions) DONE
+;it can change the rotation of the upcoming boxes DONE
+;it can change colour of boxes 
+;it can save and return to a previous state DONE
 ;it can increase height, width, depth of the box
 
 (class Turtle Object
@@ -151,18 +153,12 @@
 
    (define (new-pos axis mag)
      (let-values ([(x y z) (vec->vals position)])
-
-       ;change this to a case
-       (cond [(equal? axis 'x)
-              (vector (+ x mag) y z)]
-             
-             [(equal? axis 'y)
-              (vector x (+ y mag) z)]
-
-              [(equal? axis 'z)
-               (vector x y (+ z mag))])))
- 
-  (define/public (place)
+       (case axis
+         [(x) (vector (+ x mag) y z)]
+         [(y) (vector x (+ y mag) z)]
+         [(z) (vector x y (+ z mag))])))
+  
+  (define/public (place style)
     (define-values (w h d)
       (vec->vals dimension))
 
@@ -171,23 +167,36 @@
 
     (define-values (x-ang y-ang z-ang)
       (vec->vals rotation))
-
+    
     (cuboid x y z w h d
             (3d-rotate x-ang y-ang z-ang)
-            'opaque))
+            style))
 
   (define/public (rotate! axis angle)
     
     (define-values (x y z)
       (vec->vals rotation))
     
-    (cond [(equal? axis 'x)
-           (:= rotation (vector (+ x angle) y z))]
-          [(equal? axis 'y)
-           (:= rotation (vector x (+ y angle) z))]
-          [(equal? axis 'z)
-           (:= rotation (vector x y (+ angle z)))]))
+    (:= rotation (case axis
+                   [(x) (vector (+ x angle) y z)]
+                   [(y) (vector x (+ y angle) z)]
+                   [(z) (vector x y (+ angle z))])))
 
+  (define/public (push-state!)
+    (define state
+      (list position dimension rotation))
+    
+    (:= state-stack (cons state state-stack)))
+
+  (define/public (pop-state!)
+    
+    (match-define (list pos dim rot) (car state-stack))
+
+    (:= state-stack (cdr state-stack))
+    (:= position pos)
+    (:= dimension dim)
+    (:= rotation rot))
+      
   (define/public (move! direction)
 
     (define-values (w h d)
@@ -195,27 +204,14 @@
 
     (define-values (x y z)
       (vec->vals position))
-                  
-    ; (:= var k) is the same (set! k (var))
-    (cond
-      ;I *think* that you can't use case here coz it has side effects idk tho
-      [(equal? direction 'up)                 
-       (:= position (new-pos 'y (* 2 h)))]
-
-      [(equal? direction 'down)
-       (:= position (new-pos 'y (* 2 (- h))))]
-
-      [(equal? direction 'right)
-       (:= position (new-pos 'x (* 2 w)))]
-
-      [(equal? direction 'left)
-       (:= position (new-pos 'x (* 2 (- w))))]
-
-      [(equal? direction 'forward)
-       (:= position (new-pos 'z (* 2 d)))]
-
-      [(equal? direction 'backward)
-       (:= position (new-pos 'z (* 2 (- d))))])))
+    
+    (:= position (case direction
+                   [(up) (new-pos 'y (* 2 h))]
+                   [(down) (new-pos 'y (- (* 2 h)))]
+                   [(right) (new-pos 'x (* 2 w))]
+                   [(left) (new-pos 'x (- (* 2 w)))]
+                   [(forward) (new-pos 'z (* 2 d))]
+                   [(backward) (new-pos 'z (- (* 2 d)))]))))
 
 
 ;--------------cfg stuff----------------
@@ -223,25 +219,23 @@
 (define turtle
   (make-object Turtle
     (vector 0 0 0)   ;position
-    (vector 10 10 10);dimensions
+    (vector 5 10 15)   ;dimensions
     (vector 0 0 0)   ;rotation
     blue             ;colour
     '()))            ;state stack
 
-(define ruleset
-  (make-hash))
+(define (expand init ruleset depth)
   
-(define (expand init rules depth)
   (define (hash-replace symbol)
     ;gets the expansion of a symbol
-    (hash-ref rules symbol))
+    (hash-ref ruleset symbol))
   
   (define (expand-once lst acc)
     ;expands a list of symbols once 
     (cond [(null? lst)
            (flatten (reverse acc))]
             
-          [(hash-has-key? rules (car lst))
+          [(hash-has-key? ruleset (car lst))
            (expand-once (cdr lst)
                         (cons (hash-replace (car lst)) acc))]
 
@@ -256,35 +250,127 @@
         (loop (add1 count)
               (expand-once symbols '())))))
 
-(define (add-rule symbol expansion)
+(define (add-rule! symbol expansion ruleset)
   (hash-set! ruleset symbol expansion))
 
-(define (apply-symbols symbols)
+(define (add-random-rule! left r-len ruleset)
+  
+  (define symbol-lst
+    (list 'U 'D 'L 'R 'F 'B 'P))
+  
+  (let loop ([count 0]
+             [acc '()])
+    
+    (if (= count r-len)
+        (add-rule! left acc ruleset)
+        (loop (add1 count)
+              (cons (list-ref symbol-lst
+                              (inexact->exact (round (random (sub1 (length symbol-lst))))))
+                    acc)))))
+
+(define (apply-symbols symbols ang style)
   (let loop ([lst symbols])
     (cond [(null? lst) #t]
-          [(equal? 'U (car symbols)) (turtle.move! 'up)]
-          [(equal? 'D (car symbols)) (turtle.move! 'down)]
-          [(equal? 'L (car symbols)) (turtle.move! 'left)]
-          [(equal? 'R (car symbols)) (turtle.move! 'right)]
-          [(equal? 'F (car symbols)) (turtle.move! 'forward)]
-          [(equal? 'B (car symbols)) (turtle.move! 'backward)])))
-  
+          
+          [(equal? 'U (car lst)) (turtle.move! 'up)
+                                 (loop (cdr lst))]
+          
+          [(equal? 'D (car lst)) (turtle.move! 'down)
+                                 (loop (cdr lst))]
+          
+          [(equal? 'L (car lst)) (turtle.move! 'left)
+                                 (loop (cdr lst))]
+          
+          [(equal? 'R (car lst)) (turtle.move! 'right)
+                                 (loop (cdr lst))]
+          
+          [(equal? 'F (car lst)) (turtle.move! 'forward)
+                                 (loop (cdr lst))]
+          
+          [(equal? 'B (car lst)) (turtle.move! 'backward)
+                                 (loop (cdr lst))]
+
+          [(equal? 'X (car lst)) (turtle.rotate! 'x ang)
+                                 (loop (cdr lst))]
+
+          [(equal? 'Y (car lst)) (turtle.rotate! 'y ang)
+                                 (loop (cdr lst))]
+
+          [(equal? 'Z (car lst)) (turtle.rotate! 'z ang)
+                                 (loop (cdr lst))]
+
+          [(equal? 'P (car lst)) (turtle.place style)
+                                     (loop (cdr lst))]
+
+          [(equal? 'X* (car lst)) (turtle.rotate! 'x (- ang))
+                                      (loop (cdr lst))]
+
+          [(equal? 'Y* (car lst)) (turtle.rotate! 'y (- ang))
+                                      (loop (cdr lst))]
+
+          [(equal? 'Z* (car lst)) (turtle.rotate! 'z (- ang))
+                                      (loop (cdr lst))]
+
+          [(equal? '< (car lst)) (turtle.push-state!)
+                                     (loop (cdr lst))]
+
+          [(equal? '> (car lst)) (turtle.pop-state!)
+                                     (loop (cdr lst))]
+          
+          [else (loop (cdr lst))])))
+
+;-------------defining system-----------
+
+(define ruleset
+  (make-hash))
+
+;turtle-1 w/ angle 30
+;(add-rule! 'I (list 'P 'U 'X 'I) ruleset)
+;(add-rule! 'U (list 'U 'X 'P) ruleset)
+
+;turtle-2 w/ angle 90 
+;(add-rule! 'I (list 'P 'F 'F 'P 'R 'R 'P 'B 'B 'P 'L 'L 'U 'U 'X 'I) ruleset)
+
+;turtle-3 angle doesn't matter for this one
+;(:= turtle.position (vector -400 -400 0))
+(add-rule! 'I (list 'P 'F 'F 'P 'R 'R 'P 'B 'B 'P 'L 'L 'U 'U 'J) ruleset)
+(add-rule! 'J (list 'R 'R 'R 'P 'F 'F 'P 'R 'R 'P 'B 'B 'P 'L 'L 'U 'U 'K) ruleset)
+(add-rule! 'K (list 'B 'B 'B 'P 'F 'F 'P 'R 'R 'P 'B 'B 'P 'L 'L 'U 'U 'I) ruleset)
+
+;turtle-4
+;(:= turtle.position (vector 0 0 0))
+;(add-rule! 'F (list 'L 'X 'Y* 'P 'D) ruleset)
+;(add-rule! 'P '(B Z F U X L Y* L Y* B X F F P Y* R R P Z X Z Y* Z Z Z P F Y* Y R) ruleset)
+;(add-rule! 'R '(D B Z Y L Z F U Y B) ruleset)
+
+;turtle-5
+;(add-random-rule! 'P 10 ruleset)
+;(add-random-rule! 'F 5 ruleset)
+;(add-random-rule! 'R 7 ruleset)
+
+(define system
+  (expand (list 'I) ruleset 10))
+
+(println ruleset)
+(println "" )
+(println system)
+
 ;--------------drawing------------------
 
 (define (setup)
-  (size 1400 1000)
+  (fullscreen)
   (background 0))
 
 (define (draw)
   (translate (/ width  2)
              (/ height 2))
   
+  (stroke yellow)
   (fill blue)
-  (stroke 255)
-  (turtle.place)
-  (turtle.move! 'right)
-  (turtle.place)
-  (turtle.move! 'backward))
+  (apply-symbols system 30 'wireframe)
+  ;(apply-symbols system 90 'opaque)
+  (save "turtle3.png")
+  (no-loop))
 
   
    
