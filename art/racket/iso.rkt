@@ -274,20 +274,44 @@
           
           [(equal? 'U (car lst)) (turtle.move! 'up)
                                  (loop (cdr lst))]
+
+          [(equal? 'u (car lst)) (turtle.move! 'up)
+                                 (turtle.place style)
+                                 (loop (cdr lst))]
           
           [(equal? 'D (car lst)) (turtle.move! 'down)
                                  (loop (cdr lst))]
           
+          [(equal? 'd (car lst)) (turtle.move! 'down)
+                                 (turtle.place style)
+                                 (loop (cdr lst))]
+          
           [(equal? 'L (car lst)) (turtle.move! 'left)
+                                 (loop (cdr lst))]
+
+          [(equal? 'l (car lst)) (turtle.move! 'left)
+                                 (turtle.place style)
                                  (loop (cdr lst))]
           
           [(equal? 'R (car lst)) (turtle.move! 'right)
                                  (loop (cdr lst))]
+
+          [(equal? 'r (car lst)) (turtle.move! 'right)
+                                 (turtle.place style)
+                                 (loop (cdr lst))]
           
           [(equal? 'F (car lst)) (turtle.move! 'forward)
                                  (loop (cdr lst))]
+
+          [(equal? 'f (car lst)) (turtle.move! 'forward)
+                                 (turtle.place style)
+                                 (loop (cdr lst))]
           
           [(equal? 'B (car lst)) (turtle.move! 'backward)
+                                 (loop (cdr lst))]
+
+          [(equal? 'b (car lst)) (turtle.move! 'backward)
+                                 (turtle.place style)
                                  (loop (cdr lst))]
 
           [(equal? 'X (car lst)) (turtle.rotate! 'x ang)
@@ -325,23 +349,23 @@
   (make-hash))
 
 ;turtle-1 w/ angle 30
-;(add-rule! 'I (list 'P 'U 'X 'I) ruleset)
-;(add-rule! 'U (list 'U 'X 'P) ruleset)
+(add-rule! 'I (list 'P 'U 'X 'I) ruleset)
+(add-rule! 'U (list 'U 'X 'P) ruleset)
 
 ;turtle-2 w/ angle 90 
 ;(add-rule! 'I (list 'P 'F 'F 'P 'R 'R 'P 'B 'B 'P 'L 'L 'U 'U 'X 'I) ruleset)
 
 ;turtle-3 angle doesn't matter for this one
 ;(:= turtle.position (vector -400 -400 0))
-(add-rule! 'I (list 'P 'F 'F 'P 'R 'R 'P 'B 'B 'P 'L 'L 'U 'U 'J) ruleset)
-(add-rule! 'J (list 'R 'R 'R 'P 'F 'F 'P 'R 'R 'P 'B 'B 'P 'L 'L 'U 'U 'K) ruleset)
-(add-rule! 'K (list 'B 'B 'B 'P 'F 'F 'P 'R 'R 'P 'B 'B 'P 'L 'L 'U 'U 'I) ruleset)
+;(add-rule! 'I (list 'P 'F 'F 'P 'R 'R 'P 'B 'B 'P 'L 'L 'U 'U 'J) ruleset)
+;'(add-rule! 'J (list 'R 'R 'R 'P 'F 'F 'P 'R 'R 'P 'B 'B 'P 'L 'L 'U 'U 'K) ruleset)
+;'(add-rule! 'K (list 'B 'B 'B 'P 'F 'F 'P 'R 'R 'P 'B 'B 'P 'L 'L 'U 'U 'I) ruleset)
 
 ;turtle-4
 ;(:= turtle.position (vector 0 0 0))
 ;(add-rule! 'F (list 'L 'X 'Y* 'P 'D) ruleset)
 ;(add-rule! 'P '(B Z F U X L Y* L Y* B X F F P Y* R R P Z X Z Y* Z Z Z P F Y* Y R) ruleset)
-;(add-rule! 'R '(D B Z Y L Z F U Y B) ruleset)
+;(add-rule! 'R '(D B Z Y L Z F U Y B) ruleset)[(equal? 'B (car lst)) (turtle.move! 'backward)
 
 ;turtle-5
 ;(add-random-rule! 'P 10 ruleset)
@@ -349,7 +373,7 @@
 ;(add-random-rule! 'R 7 ruleset)
 
 (define system
-  (expand (list 'I) ruleset 10))
+  (expand (list 'I) ruleset 20))
 
 (println ruleset)
 (println "" )
