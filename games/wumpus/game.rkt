@@ -33,7 +33,7 @@
   (let* ([rand-x (random 0 width)]
          [rand-y (random 0 height)]
          [pos (cons rand-x rand-y)])
-    (set-player-position! pos)))
+    (set-player-position! player pos)))
 
 (define (get-adjacent pos)
   ;returns a list of adjacent positions
@@ -59,7 +59,7 @@
   (set-player-arrows! player
                       (sub1 (player-arrows player))))
 
-(define (status player grid)
+(define (resolve-movement player grid)
   ;return false if player is dead
   ;return true if player is alive
   (let* ([pos (player-position player)]
@@ -69,7 +69,9 @@
     
     (cond [(tile-wumpus curr-tile) #f]
           [(tile-pit curr-tile) #f]
-          [else #t])))
+          [(tile-bat curr-tile) (teleport player)
+                                (resolve-movement player
+                                                  grid)])))
 
 (define (adjacent-info grid pos)
   ;returns a list of descriptions 
@@ -136,7 +138,6 @@
        ;invalid shot, return false
        #f)))
           
-
 (define (apply-n proc n lst)
   ;applies a function to a list n times
   (let loop ([count 0]
@@ -207,4 +208,3 @@
     (place-bat (place-pit (place-wumpus (place-player positions))))))
 
 (provide (all-defined-out))
-

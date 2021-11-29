@@ -13,7 +13,7 @@
 (define grd (create-grid))
 (define plr (player (cons 0 0) 5))
 (populate-grid! 2 2 grd plr)
-
+(define lost? #f)
 ;------------------
 (define wumpus-canvas%
   (class canvas%
@@ -23,6 +23,9 @@
              [parent (send this get-parent)]
              [w (send parent get-width)]
              [h (send parent get-height)])
+
+        (when lost?
+          (restart-game))
         
         (when (member key '(left right up down))
           (game-move plr key grd)
@@ -59,28 +62,39 @@
   
 (send frame show #t)
 
+(define (restart-game)
+  (set! grd (create-grid))
+  (set! plr (player (cons 0 0) 5))
+  (populate-grid! 2 2 grd plr)
+  (set! lost? #f))
+
 (define (game-move player direction grid)
   (move-player player direction grid) ;moves the player
   
   (define description
     (string-join (adjacent-info grid (player-position player))
-                 "\n"))
+                 ", "))
   
   (send description-text set-label description)
   
-  (unless (status player grid) ;when the player is dead
-    (lose)))
-
-(define (lose)
-  (send description-text set-label "You Died"))
+  (unless (resolve-movement player grid) ;when the player is dead
+    (set! lost? #t)))
 
 (define (game-draw-reveal grid w h dc)
-  (println "2"))
+  (for ([i (cart-prod 5 5)])    
+    (let ([tile (hash-ref grid i)]
+          [x (* (car i) (/ w 5))]
+          [y (* (cdr i) (/ h 5))])
+      (cond [(tile-wumpus tile) (send dc draw-text "Wumpus" x y)]
+            [(tile-pit tile) (send dc draw-text "Pit" x y)]
+            [(tile-bat tile) (send dc draw-text "Bat" x y)]))))
 
 (define (game-draw player w h dc)
   (send dc clear)
   (draw-grid grd w h dc)
-  (draw-player player w h dc))
+  (draw-player player w h dc)
+  (when lost?
+    (game-draw-reveal grd w h dc)))
 
 (define (draw-box x y w h brush dc)
   (let ([rect-w (/ w 5)]
@@ -107,5 +121,6 @@
          [y (cdr pos)]
          [new-x (+ (/ (/ w 5) 2) (* (/ w 5) x))]
          [new-y (+ (/ (/ h 5) 2) (* (/ h 5) y))])
+    (println pos)
     (send dc set-brush "blue" 'solid)
     (send dc draw-ellipse new-x new-y 10 10)))
