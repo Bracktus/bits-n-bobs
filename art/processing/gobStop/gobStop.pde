@@ -1,3 +1,5 @@
+import processing.javafx.*;
+
 ArrayList<Ball> balls = new ArrayList<Ball>();
 
 color yellow = color(255, 253, 130);
@@ -6,20 +8,16 @@ color red = color(232, 72, 85);
 
 color[] colScheme = {yellow, orange, red};
 
-float getRadius(float h, float w, float num){
-  return 2;
-}
-
 void setup(){
-  fullScreen();
+  size(900,900, FX2D);
   
-  float radius = 80;
-  int lines = 15;
+  float radius = 60;
+  int lines = 50;
   float off;
-  for (float x = radius/2; x < width; x+= 80){
-    for (float y = radius/2 ; y < height; y+= 80){
-      off = (x+y)/2;
-      //off = cos(x + y) / 2;
+  for (float x = radius/2; x < width; x+= 45){
+    for (float y = radius/2; y < height; y+= 45){
+      //off = (x+y)/2;
+      off = cos(x + y) / 2;
       Ball temp = new Ball(new PVector(x,y), colScheme, radius, lines, off);
       balls.add(temp);
     }
@@ -29,8 +27,9 @@ void setup(){
 void draw(){
   background(43, 26, 81);
   for (Ball b: balls){
-    b.render(0.1, true);
-    //b.render2();
+    b.render(0.05, false);
+    //b.render2(0.05, false);
   }
+  println(frameRate);
   //noLoop();
 }

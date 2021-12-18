@@ -3,6 +3,7 @@ class Ball {
 
   int lines;
   float[] posAngs;
+  float[] tVals;
   float dirAng;
   float radius;
   float off; //used to set length of the chords
@@ -22,13 +23,25 @@ class Ball {
     this.posAngs = createPosAngs(lines);
     this.off = off;
     this.colsArr = createColArr(baseCols, lines);
+    this.tVals = createTVals(lines);
   }
 
   color pickRandom(color[] cols) {
     int colIdx = int(random(colScheme.length));
     return cols[colIdx];
   }
-
+  
+  float[] createTVals(int lines){
+    float[] tVals = new float[lines];
+    for (int i = 0; i < lines; i++) {
+      float posAng = posAngs[i];
+      PVector circuPoint = getCircuPoint(posAng);
+      float tVal = getIntersection(circuPoint, dirAng);
+      tVals[i] = tVal;
+    }
+    return tVals;
+      
+  }
   float[] createPosAngs(int num) {
     float[] thisPosAngs = new float[num];
     for (int i = 0; i < num; i++) {
@@ -53,15 +66,15 @@ class Ball {
       circle(pos.x, pos.y, radius*2);
     }
 
-    for (int i = 0; i < posAngs.length; i++) {
+    for (int i = 0; i < lines; i++) {
       stroke(colsArr[i]);
       float posAng = posAngs[i];
       PVector circuPoint = getCircuPoint(posAng);
 
-      float tVal = getIntersection(circuPoint, dirAng);
+      float tVal = tVals[i];
       //float prop = noise(off);
       //float prop = ((cos(off) + 1) / 2) * 0.86;
-      float prop = ((cos(off) + 1) / 2);
+      float prop = ((cos(off/2) + 1) / 2);
       drawLine(circuPoint, dirAng, tVal, prop);
     }
     off += offPlus;
@@ -100,9 +113,6 @@ class Ball {
     float x2 = start.x + p * tValue * cos(ang);
     float y2 = start.y + p * tValue * sin(ang);
     line(start.x, start.y, x2, y2);
-    //line(x1, y1, x2, y2);
-    //x1 + t cos(a) = x
-    //y1 + t sin(a) = y
   }
 
   float getIntersection(PVector start, float angle) {
