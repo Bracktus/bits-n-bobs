@@ -14,6 +14,8 @@
   (define-values (trail-x trail-y) (values (make-vector trail-len)
                                            (make-vector trail-len)))
 
+  (define/public (get-x) x)
+  (define/public (get-y) y)
   (define/public (render)
     (no-fill)
     (stroke 255)
@@ -41,7 +43,7 @@
 
     ;when attached, set velocity to the tangent vector of the player and the ball
     (unless (equal? attached 'empty)
-      (let-values ([(neo-x-vel neo-y-vel) (perp 10)])
+      (let-values ([(neo-x-vel neo-y-vel) (perp 20)])
         (set! x-vel (* direction neo-x-vel))
         (set! y-vel (* direction neo-y-vel))
         
@@ -49,7 +51,7 @@
         (let* ([vel-mag (mag x-vel y-vel)]
                [vel-norm-x (/ x-vel vel-mag)]
                [vel-norm-y (/ y-vel vel-mag)])
-          (when (> vel-mag 40)
+          (when (> vel-mag 60)
             (set! x-vel (* vel-norm-x 40))
             (set! y-vel (* vel-norm-y 40))))))
 
@@ -129,36 +131,123 @@
     (stroke 255 0 0)
     (circle x y r)))
 
+(class Ball-List Object
+   (init-field n [ball-lst (list)])
+   (super-new)
+
+   (define/public (init-lst)
+     (set! ball-lst
+       (for/list ([i (in-range n)])
+         (define x (* width (random)))
+         (define y (* height (random)))
+         (make-object Ball x y 20))))
+
+   (define/public (get)
+     ball-lst)
+
+   (define/public (render)
+     (for ([ball ball-lst])
+        (ball.render))))
+
+(class Target Object
+ (super-new)
+ (define-values (x y r) (values (* width (random)) 
+                                (* height (random))
+                                100))
+
+ (define-values (times-teleported) 0)
+
+ (define/public (get-score)
+    times-teleported)
+
+ (define/public (update! player-x player-y)
+    (when (inside? player-x player-y)
+      (set! times-teleported (add1 times-teleported))
+      (teleport!)))
+        
+ (define (inside? x2 y2)
+    (let ([x-diff^2 (sq (- x2 x))]
+          [y-diff^2 (sq (- y2 y))])
+      (< (+ x-diff^2 y-diff^2) (sq (/ r 2)))))
+
+ (define (teleport!)
+    (set! x (* width  (random)))
+    (set! y (* height (random))))
+
+ (define/public (render)
+    (stroke 0 0 255)
+    (circle x y r)))
+
+(class Timer Object
+  (init-field end)
+  (super-new)
+  (define-values (start) 0)
+
+  (define/public (reset!)
+    (set! start (floor (/ (millis) 1000))))
+  
+  (define/public (current)
+    (- (floor (/ (millis) 1000)) start))
+
+  (define/public (over?)
+    (> (current) end))
+
+  (define/public (render)
+    (define secs 
+      (max 0 (- end (current))))
+
+    (fill 0 0 255)
+    (text (number->string secs) 10 10)))
+
 (define me
   (make-object Player 300 300 5 3 'empty))
+(define them
+  (make-object Ball-List 7))
+(define targ
+  (make-object Target))
+(define timer
+  (make-object Timer 30))
 
-(define p1
-  (make-object Ball 230 300 20))
-(define p2
-  (make-object Ball 200 200 20))
-(define p3
-  (make-object Ball 350 350 20))
-(define p4
-  (make-object Ball 230 350 20))
-
-(define p-lst
-  (list p1 p2 p3 p4))
-
+(define (reset-game!)
+  (timer.reset!)
+  
+  (set! them
+        (make-object Ball-List 7))
+  (them.init-lst)
+  (set! targ
+        (make-object Target)))
+  
 (define (setup)
-  (size 600 600)
+  (fullscreen)
   (background 0)
+  (them.init-lst)
   (set-frame-rate! 90))
 
 (define (draw)
   (background 0)
-  (me.update!)
-  (me.render)
-  (for ([p p-lst])
-    (p.render)))
+  (no-cursor)
+  
+  (cond [(timer.over?)
+         (fill 0 0 255)
+         (text "Time over!" (/ width 2) (/ height 2))
+         (text (format "Score: ~a" (targ.get-score))
+               (/ width 2) (+ 20 (/ height 2)))
+         (text "Press any button to restart" (/ width 2) (+ 40 (/ height 2)))]
+
+        [else
+          (timer.render)
+          (me.update!)
+          (targ.update! (me.get-x) (me.get-y))
+          (me.render)
+          (targ.render)
+          (them.render)]))
 
 (define (on-key-pressed)
-  (me.attach! p-lst))
+  (when (timer.over?)
+    (reset-game!))
+  (me.attach! (them.get)))
 
 (define (on-key-released)
-  (me.detach!))
+  (unless (timer.over?)
+    (me.detach!)))
 
