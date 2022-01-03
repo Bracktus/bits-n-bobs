@@ -21,7 +21,6 @@
     (stroke 255)
     (render-trail)
     (unless (equal? 'empty attached)
-      ;(test-direction)
       (render-attachment)))
   
   (define/public (update!)
@@ -68,7 +67,7 @@
             [det (- (* v1-x y-vel)
                     (* v1-y x-vel))])
      (if (> det 0) -1 1)))
-        
+  
   (define/public (attach! point-lst)
     (set! attached (nearest point-lst))
     (set! direction (get-direction)))
@@ -97,7 +96,7 @@
            [y-diff (- y (attached.get-y))]
 
            [d (dist x y (attached.get-x) (attached.get-y))]
-           ;Have to recompute distance every frame because adding perp vector is inprecise and slowly increases radius.
+           ;Recompute distance every frame because the radius slowly increases.
            ;Saving it on attach produces a cool effect where the ball speeds up quickly though.
            [x-norm (/ x-diff d)]
            [y-norm (/ y-diff d)]
@@ -128,13 +127,15 @@
   (define/public (get-r) r)
 
   (define/public (render)
-    (stroke 255 0 0)
+    (stroke 0 255 0)
+    (no-fill)
     (circle x y r)))
 
 (class Ball-List Object
    (init-field n [ball-lst (list)])
    (super-new)
 
+   ;call this after creating the object
    (define/public (init-lst)
      (set! ball-lst
        (for/list ([i (in-range n)])
@@ -170,13 +171,24 @@
           [y-diff^2 (sq (- y2 y))])
       (< (+ x-diff^2 y-diff^2) (sq (/ r 2)))))
 
- (define (teleport!)
+ (define/public (teleport!)
     (set! x (* width  (random)))
     (set! y (* height (random))))
 
  (define/public (render)
-    (stroke 0 0 255)
-    (circle x y r)))
+   ;Archery target looking thing 
+   (stroke 255)
+   (fill 255)
+   (circle x y r)
+   (stroke 255 0 0)
+   (fill 255 0 0)
+   (circle x y (* r 0.75))
+   (stroke 255)
+   (fill 255)
+   (circle x y (* r 0.5))
+   (stroke 255 0 0)
+   (fill 255 0 0)
+   (circle x y (* r 0.25))))
 
 (class Timer Object
   (init-field end)
@@ -190,61 +202,71 @@
     (- (floor (/ (millis) 1000)) start))
 
   (define/public (over?)
-    (> (current) end))
+    (>= (current) end))
 
   (define/public (render)
     (define secs 
       (max 0 (- end (current))))
-
-    (fill 0 0 255)
-    (text (number->string secs) 10 10)))
+    
+    (text-size 10)
+    (fill 255)
+    (text (format "~a s" (number->string secs)) 10 10)))
 
 (define me
   (make-object Player 300 300 5 3 'empty))
+
 (define them
   (make-object Ball-List 7))
+
 (define targ
   (make-object Target))
+
 (define timer
   (make-object Timer 30))
 
 (define (reset-game!)
   (timer.reset!)
-  
-  (set! them
-        (make-object Ball-List 7))
+  (set! them (make-object Ball-List 7))
   (them.init-lst)
-  (set! targ
-        (make-object Target)))
+  (set! targ (make-object Target)))
   
 (define (setup)
   (fullscreen)
+  (targ.teleport!)
+  ;Teleporting, because when we initally create the object, the class doesn't have knowledge of width or height.
+  ;Which results in it always spawning in top right corner.
+  
+  ;If we teleport now, it'll spawn somewhere on the screen
   (background 0)
   (them.init-lst)
-  (set-frame-rate! 90))
+  (set-frame-rate! 100))
 
 (define (draw)
   (background 0)
   (no-cursor)
   
   (cond [(timer.over?)
-         (fill 0 0 255)
-         (text "Time over!" (/ width 2) (/ height 2))
+         (fill 255)
+         (text-size 20)
+         (text "Game over!" (/ width 2) (/ height 2))
          (text (format "Score: ~a" (targ.get-score))
-               (/ width 2) (+ 20 (/ height 2)))
-         (text "Press any button to restart" (/ width 2) (+ 40 (/ height 2)))]
+               (/ width 2) (+ 40 (/ height 2)))
+         (text "Press any button to restart" (/ width 2) (+ 80 (/ height 2)))]
 
         [else
-          (timer.render)
           (me.update!)
           (targ.update! (me.get-x) (me.get-y))
-          (me.render)
+          
+          (timer.render)
           (targ.render)
-          (them.render)]))
+          (them.render)
+          (me.render)]))
 
 (define (on-key-pressed)
+  
   (when (timer.over?)
     (reset-game!))
+  
   (me.attach! (them.get)))
 
 (define (on-key-released)
