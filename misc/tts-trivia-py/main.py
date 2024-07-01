@@ -68,7 +68,9 @@ def draw_card(card, type, card_name):
     ctx.fill()
 
     # font settings
-    face = create_cairo_font_face_for_file("./font/FrankRuhlLibre-VariableFont_wght.ttf", 0)
+    face = create_cairo_font_face_for_file(
+        "./font/FrankRuhlLibre-VariableFont_wght.ttf", 0
+    )
     ctx.set_font_face(face)
     ctx.set_font_size(25)
 
@@ -83,9 +85,6 @@ def draw_card(card, type, card_name):
     cols = [BLUE, PINK, YELLOW, BROWN, GREEN, ORANGE]
     ctx.translate(0, HEIGHT * 0.1)
 
-
-
-
     wrapper = TextWrapper()
     wrapper.width = 75
 
@@ -98,9 +97,7 @@ def draw_card(card, type, card_name):
 
         wrapped_text = wrapper.wrap(text)
         for wrap_idx, line in enumerate(wrapped_text):
-            ctx.move_to(
-                X_MARGIN + WIDTH * 0.05, y + wrap_idx * 30
-            )
+            ctx.move_to(X_MARGIN + WIDTH * 0.05, y + wrap_idx * 30)
             ctx.text_path(line)
             ctx.fill()
 
