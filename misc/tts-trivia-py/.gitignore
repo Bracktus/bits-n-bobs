@@ -1,3 +1,6 @@
 .venv/
 Trivia.xlsx
 *.png
+pyrightconfig.json
+cards/
+__pycache__

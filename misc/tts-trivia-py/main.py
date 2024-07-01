@@ -1,19 +1,15 @@
-from openpyxl import load_workbook
-import cairo
 from random import shuffle
 from textwrap import TextWrapper
 
-CATEGORIES = [
-    "geography",
-    "entertainment",
-    "history",
-    "art",
-    "science",
-    "sport"
-]
+import cairo
+from openpyxl import load_workbook
+
+from font_loader import create_cairo_font_face_for_file
+
+CATEGORIES = ["geography", "entertainment", "history", "art", "science", "sport"]
 TAU = 6.2831
-WIDTH = 720
-HEIGHT = 500
+WIDTH = int(720 * 1.5)
+HEIGHT = int(500 * 1.5)
 
 norm = lambda col: [v / 255 for v in col]  # noqa: E731
 BLUE = norm([53, 79, 157])
@@ -28,22 +24,32 @@ def read_qas(filename="Trivia.xlsx"):
     wb = load_workbook(filename)
     ws = wb.active
 
-    rows = list(ws.iter_rows(min_row=2, max_col=6, values_only=True))
+    if ws is None:
+        raise Exception("Worksheet is empty")
+
+    rows = list(
+        row for row in ws.iter_rows(min_row=2, max_col=6, values_only=True) if all(row)
+    )
+
     questions = [
-        list(map(str, question)) for idx, question in enumerate(rows) if idx % 2 == 0  # noqa: E501
+        map(str, question)
+        for idx, question in enumerate(rows)
+        if idx % 2 == 0  # noqa: E501
     ]
     answers = [
-        list(map(str, answer)) for idx, answer in enumerate(rows) if idx % 2 == 1  # noqa: E501
+        map(str, answer)
+        for idx, answer in enumerate(rows)
+        if idx % 2 == 1  # noqa: E501
     ]
 
     final = {cat: list() for cat in CATEGORIES}
     mapping = {i: v for i, v in enumerate(CATEGORIES)}
 
     for que, ans in zip(questions, answers):
-        for i, _ in enumerate(CATEGORIES):
+        for i, (q, a) in enumerate(zip(que, ans)):
             card = {}
-            card["question"] = que[i]
-            card["answer"] = ans[i]
+            card["question"] = q
+            card["answer"] = a
             category = mapping[i]
             final[category].append(card)
 
@@ -62,12 +68,9 @@ def draw_card(card, type, card_name):
     ctx.fill()
 
     # font settings
-    ctx.select_font_face(
-        "Open Sans",
-        cairo.FONT_SLANT_NORMAL,
-        cairo.FONT_WEIGHT_NORMAL
-    )
-    ctx.set_font_size(15)
+    face = create_cairo_font_face_for_file("./font/FrankRuhlLibre-VariableFont_wght.ttf", 0)
+    ctx.set_font_face(face)
+    ctx.set_font_size(25)
 
     def ellipse(x, y, col):
         ctx.arc(x, y, HEIGHT * 0.05, 0, 6.28)
@@ -75,27 +78,36 @@ def draw_card(card, type, card_name):
         ctx.fill()
 
     X_MARGIN = WIDTH * 0.075
+    Y_MARGIN = HEIGHT * 0.2
 
     cols = [BLUE, PINK, YELLOW, BROWN, GREEN, ORANGE]
     ctx.translate(0, HEIGHT * 0.1)
-    height_without_margin = HEIGHT - (HEIGHT * 0.2)
+
+
+
 
     wrapper = TextWrapper()
-    wrapper.width = 90
+    wrapper.width = 75
 
-    for idx, text in enumerate(card):
-        ellipse(X_MARGIN, height_without_margin / 5 * idx, cols[idx])
-        ctx.move_to(X_MARGIN + WIDTH * 0.05, height_without_margin / 5 * idx)
+    for idx, (text, col) in enumerate(zip(card, cols)):
+        y = ((HEIGHT - Y_MARGIN) / 5) * idx
+
+        ellipse(X_MARGIN, y, col)
+        ctx.move_to(X_MARGIN + WIDTH * 0.05, y)
         ctx.set_source_rgb(0, 0, 0)  # Black
 
         wrapped_text = wrapper.wrap(text)
         for wrap_idx, line in enumerate(wrapped_text):
             ctx.move_to(
-                X_MARGIN + WIDTH * 0.05,
-                height_without_margin / 5 * idx + wrap_idx * 15)
-            ctx.show_text(line)
+                X_MARGIN + WIDTH * 0.05, y + wrap_idx * 30
+            )
+            ctx.text_path(line)
+            ctx.fill()
 
-    surface.write_to_png(card_name)
+    if type == "answer":
+        surface.write_to_png(f"cards/answers/{card_name}")
+    else:
+        surface.write_to_png(f"cards/questions/{card_name}")
 
 
 def gen_qas():
@@ -116,5 +128,5 @@ def gen_qas():
 
 
 for idx, (q_card, a_card) in enumerate(gen_qas()):
-    draw_card(q_card, "NULL", f"{idx}_question.png")
-    draw_card(a_card, "NULL", f"{idx}_answer.png")
+    draw_card(q_card, "question", f"{idx}_question.png")
+    draw_card(a_card, "answer", f"{idx}_answer.png")
